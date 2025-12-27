@@ -1724,7 +1724,7 @@
     // CONFIG - No sensitive data, all handled by backend
     const API_ENDPOINT = '/.netlify/functions/syrus';
     const STORAGE_KEY = 'syrus_sessions';
-    
+    const ADMIN_CODE_STORAGE = 'syrus_admin_code';
     // TOKEN TRACKING CONFIG (client-side tracking, server validates)
     const TOKEN_STORAGE_KEY = 'syrus_token_tracking';
     const FREE_TOKEN_LIMIT = 300;
@@ -1867,7 +1867,6 @@ Tell me what you're carrying — what you're trying to build, escape, or become.
     function saveTokenData() {
       localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenData));
     }
-    
     // Check if admin code is already verified
     function checkAdminUnlock() {
       const stored = localStorage.getItem(ADMIN_CODE_STORAGE);
