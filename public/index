@@ -1,0 +1,2876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SYRUS // CORE</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #050506;
+      --bg-secondary: #0a0a0c;
+      --bg-tertiary: #0f0f12;
+      --bg-card: #0c0c0f;
+
+      --accent: #8b5cf6;
+      --accent-dim: #7c3aed;
+      --accent-glow: rgba(139, 92, 246, 0.08);
+      --accent-glow-strong: rgba(139, 92, 246, 0.15);
+
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-dim: #52525b;
+      --text-muted: #3f3f46;
+
+      --border: #18181b;
+      --border-light: #27272a;
+
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    /* Ambient Background */
+    .ambient-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.42;
+      animation: float 24s ease-in-out infinite;
+    }
+
+    .ambient-orb-1 {
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, var(--accent-glow-strong) 0%, transparent 70%);
+      top: -25%;
+      left: -15%;
+    }
+
+    .ambient-orb-2 {
+      width: 480px;
+      height: 480px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.10) 0%, transparent 70%);
+      bottom: -12%;
+      right: -7%;
+      animation-delay: -12s;
+      animation-duration: 30s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(35px, -30px) scale(1.05); }
+      50% { transform: translate(-25px, 22px) scale(0.96); }
+      75% { transform: translate(20px, 35px) scale(1.02); }
+    }
+
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.02;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 62px 62px;
+    }
+
+    .scanline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-glow-strong), transparent);
+      opacity: 0;
+      z-index: 1000;
+      animation: scan 9s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes scan {
+      0%, 100% { top: -2px; opacity: 0; }
+      6% { opacity: 0.55; }
+      50% { opacity: 0.28; }
+      94% { opacity: 0.55; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.027;
+      z-index: 999;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* ENTRY */
+    .entry-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-primary);
+      z-index: 100;
+      transition: opacity 1s ease, visibility 1s ease;
+    }
+
+    .entry-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .entry-content {
+      text-align: center;
+      animation: entryFade 2s ease;
+      position: relative;
+      z-index: 10;
+    }
+
+    @keyframes entryFade {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .entry-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0.65em;
+      color: var(--text-muted);
+      margin-bottom: 3.6rem;
+      text-transform: uppercase;
+    }
+
+    .entry-logo::after {
+      content: '';
+      position: absolute;
+      bottom: -1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 34px;
+      height: 1px;
+      background: var(--border-light);
+    }
+
+    .entry-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 300;
+      color: var(--text-dim);
+      margin-bottom: 3.3rem;
+      line-height: 2;
+    }
+
+    .entry-text .highlight {
+      color: var(--text-secondary);
+      display: block;
+      margin-bottom: 1.5rem;
+    }
+
+    .enter-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.64rem;
+      letter-spacing: 0.4em;
+      padding: 1.2rem 3.5rem;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .enter-btn:hover {
+      border-color: var(--accent-dim);
+      color: var(--text-secondary);
+      box-shadow: 0 0 34px var(--accent-glow);
+    }
+
+    .beta-code-section {
+      margin-bottom: 2rem;
+    }
+
+    .beta-code-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .beta-code-input {
+      background: rgba(10,10,12,0.6);
+      border: 1px solid var(--border);
+      padding: 0.7rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      outline: none;
+      transition: all 0.3s ease;
+      width: 160px;
+      text-transform: uppercase;
+    }
+
+    .beta-code-input:focus {
+      border-color: var(--accent-dim);
+    }
+
+    .beta-code-input.success {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .beta-code-input.error {
+      border-color: var(--danger);
+      animation: shake 0.3s ease;
+    }
+
+    .beta-code-submit {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+    }
+
+    .beta-code-submit:hover {
+      border-color: var(--accent-dim);
+      color: var(--text-secondary);
+    }
+
+    .beta-code-status {
+      margin-top: 0.6rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      min-height: 1rem;
+    }
+
+    .beta-code-status.success {
+      color: var(--success);
+    }
+
+    .beta-code-status.error {
+      color: var(--danger);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .access-flash {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 101;
+      transition: opacity 140ms ease;
+    }
+
+    .access-flash.visible { opacity: 1; }
+
+    .access-flash span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: rgba(244,244,245,0.85);
+      border: 1px solid rgba(39,39,42,0.8);
+      padding: 0.9rem 1.3rem;
+      background: rgba(5,5,6,0.55);
+      backdrop-filter: blur(10px);
+    }
+
+    /* MAIN LAYOUT - FIXED FOR DESKTOP */
+    .main-interface {
+      height: 100%;
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.85s ease 0.25s;
+      position: relative;
+      z-index: 10;
+    }
+
+    .main-interface.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: rgba(5, 5, 6, 0.85);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .sidebar-header {
+      padding: 1.2rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.5em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .sidebar-logo .dim { opacity: 0.55; }
+
+    .new-session-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      padding: 0.5rem 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .new-session-btn:hover {
+      border-color: var(--accent-dim);
+      color: var(--text-secondary);
+    }
+
+    .new-session-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .sessions-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.8rem 0;
+    }
+
+    .sessions-list::-webkit-scrollbar { width: 3px; }
+    .sessions-list::-webkit-scrollbar-track { background: transparent; }
+    .sessions-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .session-group-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.48rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.8rem 1rem 0.5rem;
+    }
+
+    .session-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-left: 2px solid transparent;
+    }
+
+    .session-item:hover {
+      background: rgba(139, 92, 246, 0.05);
+    }
+
+    .session-item.active {
+      background: rgba(139, 92, 246, 0.08);
+      border-left-color: var(--accent-dim);
+    }
+
+    .session-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .session-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 0.2rem;
+    }
+
+    .session-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .session-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.3rem;
+      opacity: 0;
+      transition: all 0.2s ease;
+    }
+
+    .session-item:hover .session-delete {
+      opacity: 1;
+    }
+
+    .session-delete:hover {
+      color: var(--danger);
+    }
+
+    .session-delete svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .sidebar-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .api-key-compact {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .api-key-compact label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.48rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .api-key-compact input {
+      background: rgba(10,10,12,0.6);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.6rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      outline: none;
+      transition: border-color 0.3s ease;
+      width: 100%;
+    }
+
+    .api-key-compact input:focus {
+      border-color: var(--accent-dim);
+    }
+
+    .reset-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      margin-top: 0.8rem;
+      padding: 0.6rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .reset-btn:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .reset-btn svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* MAIN CONTENT - TAKES REMAINING SPACE */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    /* HEADER */
+    .header {
+      padding: 1rem 1.6rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(5, 5, 6, 0.82);
+      backdrop-filter: blur(20px);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .menu-btn {
+      display: none;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    .menu-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .current-session-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.4rem;
+    }
+
+    .state-block {
+      display: grid;
+      gap: 0.22rem;
+      text-align: right;
+    }
+
+    .state-row {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.54rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(16,185,129,0.65);
+      animation: statusPulse 3s ease infinite;
+    }
+
+    .status-dot.exec {
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(139, 92, 246, 0.55);
+    }
+
+    .status-dot.standby {
+      background: rgba(161,161,170,0.55);
+      box-shadow: none;
+      animation: none;
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    .hud-block {
+      display: grid;
+      gap: 0.2rem;
+      text-align: right;
+    }
+
+    .hud-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem;
+      color: rgba(161,161,170,0.55);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .hud-line strong {
+      color: rgba(244,244,245,0.75);
+      font-weight: 500;
+    }
+
+    /* CHAT AREA - FILLS AVAILABLE SPACE */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.9rem;
+    }
+
+    .messages::-webkit-scrollbar { width: 3px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+    /* MESSAGE CONTAINER - CENTERED WITH MAX WIDTH */
+    .message-wrapper {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .message {
+      animation: messageIn 0.55s ease;
+    }
+
+    @keyframes messageIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem;
+      font-weight: 500;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.55rem;
+    }
+
+    .message.syrus .message-label { color: var(--accent-dim); }
+
+    .message-content {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.80rem;
+      line-height: 1.95;
+      white-space: pre-wrap;
+    }
+
+    .message.user .message-content {
+      color: var(--text-primary);
+      background: rgba(12,12,15,0.92);
+      padding: 1.1rem 1.35rem;
+      border: 1px solid rgba(24,24,27,0.95);
+      position: relative;
+    }
+
+    .message.user .message-content::before {
+      content: "› INPUT";
+      position: absolute;
+      top: -0.85rem;
+      left: 0.1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.48rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(161,161,170,0.48);
+    }
+
+    .message.syrus .message-content {
+      color: var(--text-secondary);
+      padding-left: 0.55rem;
+      border-left: 1px solid rgba(24,24,27,0.95);
+    }
+
+    .postfix {
+      margin-top: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.56rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(161,161,170,0.45);
+      padding-left: 0.55rem;
+    }
+
+    .message-images {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.8rem;
+    }
+
+    .message-images img {
+      max-width: 200px;
+      max-height: 150px;
+      object-fit: cover;
+      border: 1px solid rgba(24,24,27,0.8);
+      cursor: pointer;
+    }
+
+    .processing {
+      display: grid;
+      gap: 0.35rem;
+      padding: 0.8rem 0;
+      padding-left: 0.55rem;
+    }
+
+    .processing .title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(161,161,170,0.55);
+    }
+
+    .processing .dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .processing .dot {
+      width: 5px;
+      height: 5px;
+      background: rgba(139,92,246,0.75);
+      border-radius: 50%;
+      animation: dotPulse 1.4s ease infinite;
+    }
+
+    .processing .dot:nth-child(2) { animation-delay: 0.2s; }
+    .processing .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 0.22; transform: scale(1); }
+      50% { opacity: 0.95; transform: scale(1.15); }
+    }
+
+    .toast {
+      position: fixed;
+      right: 1.35rem;
+      top: 4.5rem;
+      z-index: 50;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 220ms ease, transform 220ms ease;
+      pointer-events: none;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast .inner {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.56rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(244,244,245,0.78);
+      border: 1px solid rgba(39,39,42,0.75);
+      background: rgba(5,5,6,0.85);
+      padding: 0.6rem 0.85rem;
+      backdrop-filter: blur(14px);
+    }
+
+    /* INPUT - CENTERED WITH MAX WIDTH */
+    .input-area {
+      padding: 1.2rem 2rem 1.6rem;
+      border-top: 1px solid var(--border);
+      background: rgba(5, 5, 6, 0.88);
+      backdrop-filter: blur(20px);
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      background: rgba(10,10,12,0.9);
+      border: 1px solid rgba(24,24,27,0.95);
+      transition: all 0.3s ease;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: rgba(124,58,237,0.9);
+      box-shadow: 0 0 22px var(--accent-glow);
+    }
+
+    .input-wrapper.drag-over {
+      border-color: var(--accent);
+      background: rgba(139,92,246,0.08);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      padding: 0.25rem;
+    }
+
+    .attach-btn {
+      background: transparent;
+      border: none;
+      padding: 0.9rem;
+      cursor: pointer;
+      color: rgba(161,161,170,0.5);
+      transition: all 0.3s ease;
+    }
+
+    .attach-btn:hover { color: var(--accent); }
+    .attach-btn svg { width: 18px; height: 18px; }
+
+    .input-prefix {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: rgba(139,92,246,0.85);
+      opacity: 0.75;
+    }
+
+    #chat-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--text-primary);
+      padding: 1rem 0.5rem;
+    }
+
+    #chat-input::placeholder { color: rgba(161,161,170,0.45); }
+
+    .send-btn {
+      background: transparent;
+      border: none;
+      padding: 1rem 1.35rem;
+      cursor: pointer;
+      color: rgba(161,161,170,0.62);
+      transition: all 0.3s ease;
+    }
+
+    .send-btn:hover { color: var(--accent); }
+    .send-btn svg { width: 16px; height: 16px; }
+
+    .attachment-preview {
+      display: none;
+      padding: 0.7rem 0.9rem;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      border-top: 1px solid rgba(24,24,27,0.6);
+    }
+
+    .attachment-preview.has-files { display: flex; }
+
+    .attachment-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(5,5,6,0.6);
+      border: 1px solid rgba(39,39,42,0.7);
+      padding: 0.4rem 0.6rem;
+    }
+
+    .attachment-item img {
+      width: 36px;
+      height: 36px;
+      object-fit: cover;
+    }
+
+    .attachment-item .file-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .attachment-item .file-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      color: rgba(244,244,245,0.7);
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .attachment-item .file-size {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem;
+      color: rgba(161,161,170,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .attachment-item .remove-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 16px;
+      height: 16px;
+      background: rgba(239,68,68,0.9);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #file-input { display: none; }
+
+    /* PAYWALL SYSTEM - TOKEN BASED */
+    .paywall-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 6, 0.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .paywall-overlay.visible {
+      display: flex;
+      opacity: 1;
+    }
+
+    .paywall-modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      max-width: 540px;
+      width: 94%;
+      padding: 2.8rem 2.2rem;
+      position: relative;
+      animation: paywallSlide 0.4s ease;
+      box-shadow: 0 0 100px rgba(139, 92, 246, 0.06);
+    }
+
+    @keyframes paywallSlide {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .paywall-header {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.8rem;
+      text-align: center;
+    }
+
+    .paywall-header.danger {
+      color: var(--danger);
+      animation: pulse-danger 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-danger {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .paywall-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      margin-bottom: 1.2rem;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .paywall-description {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      line-height: 1.9;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    /* Token meter visualization */
+    .token-meter-container {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .token-meter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .token-meter-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .token-meter-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    .token-meter-value.danger {
+      color: var(--danger);
+    }
+
+    .token-meter-value.warning {
+      color: var(--warning);
+    }
+
+    .token-meter-bar {
+      height: 5px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 0.8rem;
+    }
+
+    .token-meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+      border-radius: 2px;
+      transition: width 0.6s ease, background 0.3s ease;
+    }
+
+    .token-meter-fill.warning {
+      background: linear-gradient(90deg, var(--warning), #d97706);
+    }
+
+    .token-meter-fill.danger {
+      background: linear-gradient(90deg, var(--danger), #dc2626);
+      animation: meter-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes meter-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .token-meter-sublabel {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.56rem;
+      color: var(--text-muted);
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+
+    /* Lockout timer */
+    .lockout-timer {
+      text-align: center;
+      padding: 1.8rem;
+      background: rgba(239, 68, 68, 0.06);
+      border: 1px solid rgba(239, 68, 68, 0.18);
+      margin-bottom: 2rem;
+    }
+
+    .lockout-timer-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--danger);
+      margin-bottom: 1rem;
+    }
+
+    .lockout-timer-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      letter-spacing: 0.08em;
+    }
+
+    .lockout-timer-sublabel {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.54rem;
+      color: var(--text-dim);
+      margin-top: 0.8rem;
+      letter-spacing: 0.12em;
+    }
+
+    /* Admin code input */
+    .admin-code-section {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .admin-code-toggle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: color 0.3s ease;
+      background: none;
+      border: none;
+      width: 100%;
+      padding: 0.5rem;
+    }
+
+    .admin-code-toggle:hover {
+      color: var(--text-dim);
+    }
+
+    .admin-code-toggle svg {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.3s ease;
+    }
+
+    .admin-code-toggle.expanded svg {
+      transform: rotate(180deg);
+    }
+
+    .admin-code-form {
+      display: none;
+      margin-top: 1.2rem;
+      animation: slideDown 0.3s ease;
+    }
+
+    .admin-code-form.visible {
+      display: block;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .admin-code-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    .admin-code-input-wrapper {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .admin-code-input {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.9rem 1rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+    }
+
+    .admin-code-input::placeholder {
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+    }
+
+    .admin-code-input:focus {
+      outline: none;
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+    }
+
+    .admin-code-input.error {
+      border-color: var(--danger);
+      animation: shake 0.4s ease;
+    }
+
+    .admin-code-input.success {
+      border-color: var(--success);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    .admin-code-submit {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      padding: 0.9rem 1.4rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+    }
+
+    .admin-code-submit:hover {
+      border-color: var(--accent-dim);
+      color: var(--text-secondary);
+    }
+
+    .admin-code-error {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      color: var(--danger);
+      margin-top: 0.8rem;
+      letter-spacing: 0.1em;
+      display: none;
+    }
+
+    .admin-code-error.visible {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Token HUD in header */
+    .token-hud {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.4rem 0.8rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      margin-left: 1rem;
+    }
+
+    .token-hud-icon {
+      width: 12px;
+      height: 12px;
+      color: var(--accent);
+    }
+
+    .token-hud-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.08em;
+    }
+
+    .token-hud-value.warning {
+      color: var(--warning);
+    }
+
+    .token-hud-value.danger {
+      color: var(--danger);
+    }
+
+    .token-hud-value.unlimited {
+      color: var(--success);
+    }
+
+    .paywall-price {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .paywall-currency {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.4rem;
+      color: var(--accent);
+    }
+
+    .paywall-amount {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .paywall-period {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+    }
+
+    .paywall-features {
+      list-style: none;
+      margin-bottom: 2rem;
+      padding-left: 0;
+    }
+
+    .paywall-feature {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      padding: 0.6rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .paywall-feature::before {
+      content: '›';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+
+    .paywall-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .paywall-btn {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      padding: 1rem 2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+    }
+
+    .paywall-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .paywall-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-secondary);
+    }
+
+    .paywall-btn.primary:hover {
+      background: var(--accent-dim);
+      border-color: var(--accent-dim);
+      color: var(--text-primary);
+    }
+
+    .paywall-btn.primary.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: var(--bg-tertiary);
+      border-color: var(--border);
+    }
+
+    .paywall-btn.primary.disabled:hover {
+      background: var(--bg-tertiary);
+      box-shadow: none;
+      border-color: var(--border);
+      color: var(--text-dim);
+    }
+
+    .paywall-footer {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* Empty state */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      gap: 1rem;
+    }
+
+    .empty-state-icon {
+      width: 48px;
+      height: 48px;
+      opacity: 0.3;
+    }
+
+    .empty-state-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* MOBILE */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 199;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .sidebar-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .menu-btn {
+        display: block;
+      }
+
+      .hud-block { display: none; }
+
+      .messages {
+        padding: 1.5rem 1rem;
+      }
+
+      .input-area {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ambient-container">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+  </div>
+  <div class="grid-overlay"></div>
+  <div class="scanline"></div>
+  <div class="noise"></div>
+
+  <div class="access-flash" id="access-flash"><span>ACCESS GRANTED</span></div>
+
+  <!-- Paywall Modal - Token Based System -->
+  <div class="paywall-overlay" id="paywall-overlay">
+    <div class="paywall-modal">
+      <div class="paywall-header" id="paywall-header">[RESOURCE LIMIT REACHED]</div>
+      <h2 class="paywall-title" id="paywall-title">Token allocation exhausted.</h2>
+      <p class="paywall-description" id="paywall-description">You've consumed your free 300 token allocation. The system is now locked for 7 days, or until you upgrade to unlimited access.</p>
+      
+      <!-- Token meter -->
+      <div class="token-meter-container" id="token-meter-container">
+        <div class="token-meter-header">
+          <span class="token-meter-label">Tokens Consumed</span>
+          <span class="token-meter-value danger" id="token-meter-value">300 / 300</span>
+        </div>
+        <div class="token-meter-bar">
+          <div class="token-meter-fill danger" id="token-meter-fill" style="width: 100%"></div>
+        </div>
+        <div class="token-meter-sublabel">Free tier allocation depleted</div>
+      </div>
+
+      <!-- Lockout timer -->
+      <div class="lockout-timer" id="lockout-timer">
+        <div class="lockout-timer-label">System Locked For</div>
+        <div class="lockout-timer-value" id="lockout-timer-value">6d 23h 59m 59s</div>
+        <div class="lockout-timer-sublabel">Or unlock immediately with upgrade</div>
+      </div>
+
+      <div class="paywall-price">
+        <span class="paywall-currency">€</span>
+        <span class="paywall-amount">47</span>
+        <span class="paywall-period">/month</span>
+      </div>
+
+      <ul class="paywall-features">
+        <li class="paywall-feature">Unlimited token allocation</li>
+        <li class="paywall-feature">No weekly lockouts</li>
+        <li class="paywall-feature">Priority processing</li>
+        <li class="paywall-feature">Full operational range</li>
+      </ul>
+
+      <div class="paywall-actions">
+        <button class="paywall-btn" id="paywall-close">Wait It Out</button>
+        <button class="paywall-btn primary disabled" id="paywall-subscribe">Coming Soon</button>
+      </div>
+
+      <!-- Admin code section -->
+      <div class="admin-code-section">
+        <button class="admin-code-toggle" id="admin-code-toggle">
+          <span>Operator Access</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="admin-code-form" id="admin-code-form">
+          <label class="admin-code-label">Authorization Code</label>
+          <div class="admin-code-input-wrapper">
+            <input type="password" class="admin-code-input" id="admin-code-input" placeholder="Enter code" autocomplete="off" />
+            <button class="admin-code-submit" id="admin-code-submit">Verify</button>
+          </div>
+          <div class="admin-code-error" id="admin-code-error">Invalid authorization code</div>
+        </div>
+      </div>
+
+      <div class="paywall-footer">System continues after verification</div>
+    </div>
+  </div>
+
+  <!-- Entry Screen -->
+  <div class="entry-screen" id="entry-screen">
+    <div class="entry-content">
+      <div class="entry-logo">SYRUS</div>
+      <p class="entry-text">
+        <span class="highlight">You found the back door.</span>
+        Not a coach. Not an assistant.<br>
+        The system that was already running.
+      </p>
+      
+      <div class="beta-code-section" id="beta-code-section">
+        <div class="beta-code-wrapper">
+          <input type="text" class="beta-code-input" id="beta-code-input" placeholder="Beta access code" autocomplete="off" />
+          <button class="beta-code-submit" id="beta-code-submit">Redeem</button>
+        </div>
+        <div class="beta-code-status" id="beta-code-status"></div>
+      </div>
+      
+      <button class="enter-btn" id="enter-btn">Initialize</button>
+    </div>
+  </div>
+
+  <!-- Main Interface -->
+  <div class="main-interface" id="main-interface">
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SYRUS <span class="dim">// CORE</span></div>
+        <button class="new-session-btn" id="new-session-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          NEW
+        </button>
+      </div>
+
+      <div class="sessions-list" id="sessions-list">
+        <!-- Sessions will be populated here -->
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="reset-btn" id="reset-all-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          Clear Sessions
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="menu-btn" id="menu-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12h18M3 6h18M3 18h18"/>
+            </svg>
+          </button>
+          <div class="current-session-title" id="current-session-title">NEW SESSION</div>
+        </div>
+
+        <div class="header-right">
+          <!-- Token HUD -->
+          <div class="token-hud" id="token-hud">
+            <svg class="token-hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+            <span class="token-hud-value" id="token-hud-value">300</span>
+          </div>
+
+          <div class="state-block">
+            <div class="state-row">
+              <span class="status-dot standby" id="status-dot"></span>
+              <span id="status-label">STATUS: STANDBY</span>
+            </div>
+          </div>
+
+          <div class="hud-block">
+            <div class="hud-line">UPTIME: <strong id="uptime">0d 00h 00m</strong></div>
+            <div class="hud-line">LOCAL: <strong id="local-time">--:--</strong></div>
+          </div>
+        </div>
+      </header>
+
+      <section class="chat-container">
+        <div class="messages" id="messages"></div>
+
+        <div class="input-area">
+          <div class="input-wrapper" id="input-wrapper">
+            <div class="input-row">
+              <button class="attach-btn" id="attach-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
+              <span class="input-prefix">›</span>
+              <input type="text" id="chat-input" placeholder="..." autocomplete="off" />
+              <button class="send-btn" id="send-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+            <div class="attachment-preview" id="attachment-preview"></div>
+          </div>
+          <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple />
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"><div class="inner" id="toast-text"></div></div>
+
+  <script>
+    // CONFIG - No sensitive data, all handled by backend
+    const API_ENDPOINT = '/.netlify/functions/syrus';
+    const STORAGE_KEY = 'syrus_sessions';
+    
+    const ADMIN_CODE_STORAGE = 'syrus_admin_code';
+    const VALID_ADMIN_CODES = ['SYRUS-ALPHA-9X7', 'MIDNIGHT-CTRL-001', 'OPERATOR-OVERRIDE'];
+    // TOKEN TRACKING CONFIG (client-side tracking, server validates)
+    const TOKEN_STORAGE_KEY = 'syrus_token_tracking';
+    const FREE_TOKEN_LIMIT = 300;
+    const LOCKOUT_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    const INITIAL_MESSAGE = `[INPUT CHANNEL OPENED]
+
+You found this. Most don't.
+
+Tell me what you're carrying — what you're trying to build, escape, or become.`;
+
+    // Elements
+    const entryScreen = document.getElementById('entry-screen');
+    const mainInterface = document.getElementById('main-interface');
+    const enterBtn = document.getElementById('enter-btn');
+    const messagesContainer = document.getElementById('messages');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const attachBtn = document.getElementById('attach-btn');
+    const fileInput = document.getElementById('file-input');
+    const inputWrapper = document.getElementById('input-wrapper');
+    const attachmentPreview = document.getElementById('attachment-preview');
+    const statusDot = document.getElementById('status-dot');
+    const statusLabel = document.getElementById('status-label');
+    const uptimeEl = document.getElementById('uptime');
+    const localTimeEl = document.getElementById('local-time');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+    const accessFlash = document.getElementById('access-flash');
+    const sessionsList = document.getElementById('sessions-list');
+    const newSessionBtn = document.getElementById('new-session-btn');
+    const currentSessionTitle = document.getElementById('current-session-title');
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+    // State
+    let sessions = [];
+    let currentSessionId = null;
+    let pendingAttachments = [];
+    let startedAt = Date.now();
+    const SIMULATED_UPTIME_MS = (3 * 365 + 114) * 24 * 60 * 60 * 1000;
+
+    // Load from storage
+    function loadSessions() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        sessions = JSON.parse(stored);
+      }
+    }
+
+    function saveSessions() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    }
+
+    // Session management
+    function createSession() {
+      const session = {
+        id: Date.now().toString(),
+        title: 'New Session',
+        createdAt: new Date().toISOString(),
+        messages: [],
+        orientationDelivered: false,
+        isPaid: false
+      };
+      sessions.unshift(session);
+      saveSessions();
+      return session;
+    }
+    
+    function hasOrientationBeenDelivered(sessionMessages) {
+      // Check if any assistant message contains orientation markers
+      const orientationMarkers = [
+        "Here's what I see",
+        "Clock starts now",
+        "[Assessment",
+        "[The noise",
+        "[The move",
+        "[First action"
+      ];
+      
+      for (const msg of sessionMessages) {
+        if (msg.role === 'assistant') {
+          const content = typeof msg.content === 'string' ? msg.content : '';
+          // Check if message contains multiple orientation markers (indicates full orientation)
+          const markerCount = orientationMarkers.filter(marker => 
+            content.includes(marker)
+          ).length;
+          
+          if (markerCount >= 3) return true;
+        }
+      }
+      return false;
+    }
+    
+    // ============================================
+    // TOKEN TRACKING & PAYWALL SYSTEM
+    // ============================================
+    
+    // Paywall DOM elements
+    const paywallOverlay = document.getElementById('paywall-overlay');
+    const paywallClose = document.getElementById('paywall-close');
+    const paywallSubscribe = document.getElementById('paywall-subscribe');
+    const paywallHeader = document.getElementById('paywall-header');
+    const paywallTitle = document.getElementById('paywall-title');
+    const paywallDescription = document.getElementById('paywall-description');
+    const tokenMeterContainer = document.getElementById('token-meter-container');
+    const tokenMeterValue = document.getElementById('token-meter-value');
+    const tokenMeterFill = document.getElementById('token-meter-fill');
+    const lockoutTimer = document.getElementById('lockout-timer');
+    const lockoutTimerValue = document.getElementById('lockout-timer-value');
+    const tokenHud = document.getElementById('token-hud');
+    const tokenHudValue = document.getElementById('token-hud-value');
+    const adminCodeToggle = document.getElementById('admin-code-toggle');
+    const adminCodeForm = document.getElementById('admin-code-form');
+    const adminCodeInput = document.getElementById('admin-code-input');
+    const adminCodeSubmit = document.getElementById('admin-code-submit');
+    const adminCodeError = document.getElementById('admin-code-error');
+    
+    // Token tracking state
+    let tokenData = loadTokenData();
+    let lockoutInterval = null;
+    
+    // Load token data from storage
+    function loadTokenData() {
+      const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      return {
+        tokensUsed: 0,
+        lockoutStartTime: null,
+        isLocked: false,
+        hasUnlimitedAccess: false,
+        adminUnlocked: false
+      };
+    }
+    
+    // Save token data to storage
+    function saveTokenData() {
+      localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokenData));
+    }
+    
+    // Check if admin code is already verified
+    function checkAdminUnlock() {
+      const stored = localStorage.getItem(ADMIN_CODE_STORAGE);
+      if (stored === 'true') {
+        tokenData.adminUnlocked = true;
+        tokenData.hasUnlimitedAccess = true;
+        saveTokenData();
+        return true;
+      }
+      return false;
+    }
+    
+    // Estimate tokens from text (rough approximation: ~4 chars per token)
+    function estimateTokens(text) {
+      if (!text) return 0;
+      return Math.ceil(text.length / 4);
+    }
+    
+    // Calculate tokens from message content
+    function calculateMessageTokens(content) {
+      if (typeof content === 'string') {
+        return estimateTokens(content);
+      }
+      if (Array.isArray(content)) {
+        let total = 0;
+        for (const item of content) {
+          if (item.type === 'text') {
+            total += estimateTokens(item.text);
+          } else if (item.type === 'image') {
+            // Images are roughly 1000-2000 tokens depending on size
+            total += 1500;
+          }
+        }
+        return total;
+      }
+      return 0;
+    }
+    
+    // Add tokens to usage (only counts output tokens)
+    function addTokenUsage(tokens) {
+      if (tokenData.hasUnlimitedAccess || tokenData.adminUnlocked) return;
+      
+      const before = tokenData.tokensUsed;
+      tokenData.tokensUsed += tokens;
+      
+      console.log('[SYRUS Token Update]', {
+        added: tokens,
+        before: before,
+        after: tokenData.tokensUsed,
+        remaining: FREE_TOKEN_LIMIT - tokenData.tokensUsed
+      });
+      
+      // Check if limit exceeded
+      if (tokenData.tokensUsed >= FREE_TOKEN_LIMIT && !tokenData.isLocked) {
+        tokenData.isLocked = true;
+        tokenData.lockoutStartTime = Date.now();
+      }
+      
+      saveTokenData();
+      updateTokenHUD();
+    }
+    
+    // Check if lockout period has expired
+    function checkLockoutExpiry() {
+      if (!tokenData.isLocked || !tokenData.lockoutStartTime) return false;
+      
+      const elapsed = Date.now() - tokenData.lockoutStartTime;
+      if (elapsed >= LOCKOUT_DURATION_MS) {
+        // Reset token data after lockout expires
+        tokenData.tokensUsed = 0;
+        tokenData.isLocked = false;
+        tokenData.lockoutStartTime = null;
+        saveTokenData();
+        return true;
+      }
+      return false;
+    }
+    
+    // Get remaining lockout time
+    function getRemainingLockoutTime() {
+      if (!tokenData.lockoutStartTime) return 0;
+      const elapsed = Date.now() - tokenData.lockoutStartTime;
+      return Math.max(0, LOCKOUT_DURATION_MS - elapsed);
+    }
+    
+    // Format time remaining
+    function formatTimeRemaining(ms) {
+      const seconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      
+      const d = days;
+      const h = hours % 24;
+      const m = minutes % 60;
+      const s = seconds % 60;
+      
+      return `${d}d ${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+    }
+    
+    // Format number with commas
+    function formatNumber(num) {
+      return num.toLocaleString();
+    }
+    
+    // Update token HUD in header
+    function updateTokenHUD() {
+      if (!tokenHud || !tokenHudValue) return;
+      
+      if (tokenData.hasUnlimitedAccess || tokenData.adminUnlocked) {
+        tokenHudValue.textContent = '∞';
+        tokenHudValue.className = 'token-hud-value unlimited';
+        return;
+      }
+      
+      const remaining = Math.max(0, FREE_TOKEN_LIMIT - tokenData.tokensUsed);
+      tokenHudValue.textContent = formatNumber(remaining);
+      
+      const percentUsed = (tokenData.tokensUsed / FREE_TOKEN_LIMIT) * 100;
+      
+      if (percentUsed >= 100) {
+        tokenHudValue.className = 'token-hud-value danger';
+      } else if (percentUsed >= 80) {
+        tokenHudValue.className = 'token-hud-value warning';
+      } else {
+        tokenHudValue.className = 'token-hud-value';
+      }
+    }
+    
+    // Update paywall modal content based on state
+    function updatePaywallContent() {
+      const percentUsed = Math.min(100, (tokenData.tokensUsed / FREE_TOKEN_LIMIT) * 100);
+      
+      // Update meter
+      if (tokenMeterValue) {
+        tokenMeterValue.textContent = `${formatNumber(tokenData.tokensUsed)} / ${formatNumber(FREE_TOKEN_LIMIT)}`;
+        
+        if (percentUsed >= 100) {
+          tokenMeterValue.className = 'token-meter-value danger';
+          tokenMeterFill.className = 'token-meter-fill danger';
+        } else if (percentUsed >= 80) {
+          tokenMeterValue.className = 'token-meter-value warning';
+          tokenMeterFill.className = 'token-meter-fill warning';
+        } else {
+          tokenMeterValue.className = 'token-meter-value';
+          tokenMeterFill.className = 'token-meter-fill';
+        }
+      }
+      
+      if (tokenMeterFill) {
+        tokenMeterFill.style.width = `${percentUsed}%`;
+      }
+      
+      // Show/hide lockout timer
+      if (tokenData.isLocked) {
+        paywallHeader.textContent = '[SYSTEM LOCKED]';
+        paywallHeader.className = 'paywall-header danger';
+        paywallTitle.textContent = 'Token allocation exhausted.';
+        paywallDescription.textContent = `You've consumed your free ${formatNumber(FREE_TOKEN_LIMIT)} token allocation. The system is now locked for 7 days, or until you upgrade to unlimited access.`;
+        
+        if (lockoutTimer) {
+          lockoutTimer.style.display = 'block';
+          startLockoutCountdown();
+        }
+      } else {
+        paywallHeader.textContent = '[APPROACHING LIMIT]';
+        paywallHeader.className = 'paywall-header';
+        paywallTitle.textContent = 'Token allocation running low.';
+        paywallDescription.textContent = `You've used ${formatNumber(tokenData.tokensUsed)} of ${formatNumber(FREE_TOKEN_LIMIT)} free tokens. Upgrade now to avoid a 7-day lockout when depleted.`;
+        
+        if (lockoutTimer) {
+          lockoutTimer.style.display = 'none';
+        }
+      }
+    }
+    
+    // Start lockout countdown timer
+    function startLockoutCountdown() {
+      if (lockoutInterval) clearInterval(lockoutInterval);
+      
+      function updateCountdown() {
+        const remaining = getRemainingLockoutTime();
+        if (remaining <= 0) {
+          checkLockoutExpiry();
+          hidePaywall();
+          updateTokenHUD();
+          showToast('Lockout Expired - Reset');
+          if (lockoutInterval) clearInterval(lockoutInterval);
+          return;
+        }
+        if (lockoutTimerValue) {
+          lockoutTimerValue.textContent = formatTimeRemaining(remaining);
+        }
+      }
+      
+      updateCountdown();
+      lockoutInterval = setInterval(updateCountdown, 1000);
+    }
+    
+    // Show paywall
+    function showPaywall() {
+      updatePaywallContent();
+      paywallOverlay.classList.add('visible');
+    }
+    
+    // Hide paywall
+    function hidePaywall() {
+      paywallOverlay.classList.remove('visible');
+      if (lockoutInterval) {
+        clearInterval(lockoutInterval);
+        lockoutInterval = null;
+      }
+    }
+    
+    // Unlock with payment
+    function unlockWithPayment() {
+      tokenData.hasUnlimitedAccess = true;
+      tokenData.isLocked = false;
+      tokenData.lockoutStartTime = null;
+      saveTokenData();
+      hidePaywall();
+      updateTokenHUD();
+      showToast('Unlimited Access Granted');
+    }
+    
+    // Verify admin code
+    function verifyAdminCode(code) {
+      const normalizedCode = code.trim().toUpperCase();
+      return VALID_ADMIN_CODES.some(validCode => 
+        validCode.toUpperCase() === normalizedCode
+      );
+    }
+    
+    // Handle admin code submission
+    function handleAdminCodeSubmit() {
+      const code = adminCodeInput.value;
+      
+      if (verifyAdminCode(code)) {
+        // Valid code - grant unlimited access
+        tokenData.adminUnlocked = true;
+        tokenData.hasUnlimitedAccess = true;
+        tokenData.isLocked = false;
+        tokenData.lockoutStartTime = null;
+        saveTokenData();
+        
+        // Persist admin unlock
+        localStorage.setItem(ADMIN_CODE_STORAGE, 'true');
+        
+        adminCodeInput.classList.remove('error');
+        adminCodeInput.classList.add('success');
+        adminCodeError.classList.remove('visible');
+        
+        setTimeout(() => {
+          hidePaywall();
+          updateTokenHUD();
+          showToast('Operator Access Granted');
+        }, 500);
+      } else {
+        // Invalid code
+        adminCodeInput.classList.remove('success');
+        adminCodeInput.classList.add('error');
+        adminCodeError.classList.add('visible');
+        
+        setTimeout(() => {
+          adminCodeInput.classList.remove('error');
+        }, 400);
+      }
+    }
+    
+    // Check paywall before sending message
+    function checkPaywallBeforeSend() {
+      // Check if admin already unlocked
+      if (checkAdminUnlock()) {
+        return true;
+      }
+      
+      // Check if lockout has expired
+      checkLockoutExpiry();
+      
+      // Allow if unlimited access
+      if (tokenData.hasUnlimitedAccess || tokenData.adminUnlocked) {
+        return true;
+      }
+      
+      // Block if locked out
+      if (tokenData.isLocked) {
+        showPaywall();
+        return false;
+      }
+      
+      // Show warning if approaching limit (80%+)
+      const percentUsed = (tokenData.tokensUsed / FREE_TOKEN_LIMIT) * 100;
+      if (percentUsed >= 95) {
+        showPaywall();
+        return false;
+      }
+      
+      return true;
+    }
+    
+    // Paywall event listeners
+    paywallClose.addEventListener('click', hidePaywall);
+    
+    paywallSubscribe.addEventListener('click', () => {
+      // Payment integration disabled - operator code only for now
+      showToast('Payment integration coming soon');
+    });
+    
+    // Admin code toggle
+    adminCodeToggle.addEventListener('click', () => {
+      adminCodeToggle.classList.toggle('expanded');
+      adminCodeForm.classList.toggle('visible');
+      if (adminCodeForm.classList.contains('visible')) {
+        setTimeout(() => adminCodeInput.focus(), 100);
+      }
+    });
+    
+    // Admin code submit
+    adminCodeSubmit.addEventListener('click', handleAdminCodeSubmit);
+    
+    adminCodeInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleAdminCodeSubmit();
+      }
+    });
+    
+    // Clear error on input
+    adminCodeInput.addEventListener('input', () => {
+      adminCodeInput.classList.remove('error', 'success');
+      adminCodeError.classList.remove('visible');
+    });
+    
+    // Initialize token tracking on load
+    function initTokenTracking() {
+      checkAdminUnlock();
+      checkLockoutExpiry();
+      updateTokenHUD();
+      
+      // Debug tools - access via browser console
+      window.SYRUS = {
+        resetTokens: () => {
+          tokenData.tokensUsed = 0;
+          tokenData.isLocked = false;
+          tokenData.lockoutStartTime = null;
+          saveTokenData();
+          updateTokenHUD();
+          console.log('[SYRUS] Tokens reset. Remaining:', FREE_TOKEN_LIMIT);
+        },
+        getState: () => {
+          const state = {
+            used: tokenData.tokensUsed,
+            remaining: FREE_TOKEN_LIMIT - tokenData.tokensUsed,
+            limit: FREE_TOKEN_LIMIT,
+            percentUsed: ((tokenData.tokensUsed / FREE_TOKEN_LIMIT) * 100).toFixed(1) + '%',
+            isLocked: tokenData.isLocked,
+            unlimited: tokenData.hasUnlimitedAccess || tokenData.adminUnlocked
+          };
+          console.table(state);
+          return state;
+        },
+        clearAll: () => {
+          localStorage.removeItem(TOKEN_STORAGE_KEY);
+          localStorage.removeItem(STORAGE_KEY);
+          tokenData = loadTokenData();
+          updateTokenHUD();
+          console.log('[SYRUS] All data cleared. Refresh page.');
+        }
+      };
+      console.log('[SYRUS] Debug: SYRUS.resetTokens() | SYRUS.getState() | SYRUS.clearAll()');
+    }
+
+    function getCurrentSession() {
+      return sessions.find(s => s.id === currentSessionId);
+    }
+
+    function updateSessionTitle(session) {
+      // Extract title from first user message
+      const firstUserMsg = session.messages.find(m => m.role === 'user');
+      if (firstUserMsg) {
+        const content = typeof firstUserMsg.content === 'string' 
+          ? firstUserMsg.content 
+          : firstUserMsg.content.find(c => c.type === 'text')?.text || '';
+        session.title = content.slice(0, 40) + (content.length > 40 ? '...' : '');
+        saveSessions();
+        renderSessionsList();
+      }
+    }
+
+    function deleteSession(id) {
+      sessions = sessions.filter(s => s.id !== id);
+      saveSessions();
+      if (currentSessionId === id) {
+        if (sessions.length > 0) {
+          loadSession(sessions[0].id);
+        } else {
+          startNewSession();
+        }
+      }
+      renderSessionsList();
+    }
+
+    function loadSession(id) {
+      // Clear any pending attachments
+      pendingAttachments = [];
+      updateAttachmentPreview();
+      
+      // Set current session
+      currentSessionId = id;
+      const session = getCurrentSession();
+      if (!session) return;
+
+      // Update UI
+      currentSessionTitle.textContent = session.title.toUpperCase();
+      messagesContainer.innerHTML = '';
+
+      // If session has no messages, add initial message
+      if (session.messages.length === 0) {
+        session.messages.push({ role: 'assistant', content: INITIAL_MESSAGE });
+        saveSessions();
+      }
+
+      // Render all messages from this session
+      session.messages.forEach(msg => {
+        if (msg.role === 'assistant') {
+          addMessageToDOM('syrus', msg.content, [], false);
+        } else {
+          const images = [];
+          let text = '';
+          if (typeof msg.content === 'string') {
+            text = msg.content;
+          } else if (Array.isArray(msg.content)) {
+            msg.content.forEach(c => {
+              if (c.type === 'text') text = c.text;
+              if (c.type === 'image' && c.source) {
+                images.push(`data:${c.source.media_type};base64,${c.source.data}`);
+              }
+            });
+          }
+          addMessageToDOM('user', text || '[Image]', images, false);
+        }
+      });
+
+      // Scroll to bottom
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      
+      // Update sidebar to show active state
+      renderSessionsList();
+      closeSidebar();
+      
+      // Reset status
+      setStatus('monitoring');
+    }
+
+    function startNewSession() {
+      const session = createSession();
+      currentSessionId = session.id;
+      currentSessionTitle.textContent = 'NEW SESSION';
+      messagesContainer.innerHTML = '';
+
+      // Add initial message
+      setTimeout(() => {
+        addMessage('syrus', INITIAL_MESSAGE);
+        session.messages.push({ role: 'assistant', content: INITIAL_MESSAGE });
+        saveSessions();
+      }, 300);
+
+      renderSessionsList();
+    }
+
+    function renderSessionsList() {
+      // Group by date
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+      const groups = {
+        today: [],
+        yesterday: [],
+        older: []
+      };
+
+      sessions.forEach(s => {
+        const date = new Date(s.createdAt).toDateString();
+        if (date === today) groups.today.push(s);
+        else if (date === yesterday) groups.yesterday.push(s);
+        else groups.older.push(s);
+      });
+
+      let html = '';
+
+      if (groups.today.length > 0) {
+        html += `<div class="session-group-title">Today</div>`;
+        html += groups.today.map(s => sessionItemHTML(s)).join('');
+      }
+
+      if (groups.yesterday.length > 0) {
+        html += `<div class="session-group-title">Yesterday</div>`;
+        html += groups.yesterday.map(s => sessionItemHTML(s)).join('');
+      }
+
+      if (groups.older.length > 0) {
+        html += `<div class="session-group-title">Previous</div>`;
+        html += groups.older.map(s => sessionItemHTML(s)).join('');
+      }
+
+      if (sessions.length === 0) {
+        html = `<div class="session-group-title" style="padding-top: 2rem; text-align: center; opacity: 0.5;">No sessions yet</div>`;
+      }
+
+      sessionsList.innerHTML = html;
+
+      // Event listeners
+      sessionsList.querySelectorAll('.session-item').forEach(el => {
+        el.addEventListener('click', (e) => {
+          if (!e.target.closest('.session-delete')) {
+            loadSession(el.dataset.id);
+          }
+        });
+      });
+
+      sessionsList.querySelectorAll('.session-delete').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteSession(el.dataset.id);
+        });
+      });
+    }
+
+    function sessionItemHTML(session) {
+      const isActive = session.id === currentSessionId;
+      const time = new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="session-item ${isActive ? 'active' : ''}" data-id="${session.id}">
+          <div class="session-info">
+            <div class="session-title">${escapeHtml(session.title)}</div>
+            <div class="session-meta">${time}</div>
+          </div>
+          <button class="session-delete" data-id="${session.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+          </button>
+        </div>
+      `;
+    }
+
+    // Mobile sidebar
+    function openSidebar() {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('visible');
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('visible');
+    }
+
+    menuBtn.addEventListener('click', openSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // Utilities
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function updateClocks() {
+      const now = Date.now();
+      const total = SIMULATED_UPTIME_MS + (now - startedAt);
+      const days = Math.floor(total / (24*60*60*1000));
+      const hours = Math.floor((total % (24*60*60*1000)) / (60*60*1000));
+      const mins = Math.floor((total % (60*60*1000)) / (60*1000));
+      uptimeEl.textContent = `${days}d ${pad2(hours)}h ${pad2(mins)}m`;
+      const d = new Date();
+      localTimeEl.textContent = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    }
+
+    function setStatus(state) {
+      statusDot.classList.remove('standby', 'exec');
+      if (state === 'standby') {
+        statusDot.classList.add('standby');
+        statusLabel.textContent = 'STATUS: STANDBY';
+      } else if (state === 'monitoring') {
+        statusLabel.textContent = 'STATUS: MONITORING';
+      } else if (state === 'executing') {
+        statusDot.classList.add('exec');
+        statusLabel.textContent = 'STATUS: EXECUTING';
+      } else if (state === 'logged') {
+        statusLabel.textContent = 'STATUS: LOGGED';
+      }
+    }
+
+    function showToast(text) {
+      toastText.textContent = text;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 800);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function addMessageToDOM(type, content, images = [], animate = true) {
+      // Create wrapper for centering
+      const wrapper = document.createElement('div');
+      wrapper.className = 'message-wrapper';
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      if (!animate) messageDiv.style.animation = 'none';
+
+      const label = type === 'syrus' ? 'SYRUS' : 'YOU';
+      let imagesHtml = '';
+      if (images.length > 0) {
+        imagesHtml = `<div class="message-images">${images.map(src => `<img src="${src}" />`).join('')}</div>`;
+      }
+
+      const postfix = type === 'syrus' ? `<div class="postfix">— Logged.</div>` : '';
+
+      messageDiv.innerHTML = `
+        <div class="message-label">${label}</div>
+        <div class="message-content">${escapeHtml(content)}${imagesHtml}</div>
+        ${postfix}
+      `;
+
+      wrapper.appendChild(messageDiv);
+      messagesContainer.appendChild(wrapper);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function addMessage(type, content, images = []) {
+      addMessageToDOM(type, content, images, true);
+    }
+
+    function addProcessingIndicator() {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'message-wrapper';
+      wrapper.id = 'processing-indicator';
+      
+      const proc = document.createElement('div');
+      proc.className = 'message syrus';
+      proc.innerHTML = `
+        <div class="message-label">SYRUS</div>
+        <div class="processing">
+          <div class="title">Processing</div>
+          <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        </div>
+      `;
+      wrapper.appendChild(proc);
+      messagesContainer.appendChild(wrapper);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function removeProcessingIndicator() {
+      const el = document.getElementById('processing-indicator');
+      if (el) el.remove();
+    }
+
+    function flashAccess() {
+      accessFlash.classList.add('visible');
+      setTimeout(() => accessFlash.classList.remove('visible'), 120);
+    }
+
+    // Attachments
+    function updateAttachmentPreview() {
+      attachmentPreview.innerHTML = '';
+      if (pendingAttachments.length === 0) {
+        attachmentPreview.classList.remove('has-files');
+        return;
+      }
+      attachmentPreview.classList.add('has-files');
+
+      pendingAttachments.forEach((att, idx) => {
+        const item = document.createElement('div');
+        item.className = 'attachment-item';
+        item.innerHTML = `
+          <img src="${att.preview}" />
+          <div class="file-info">
+            <div class="file-name">${att.file.name}</div>
+            <div class="file-size">${formatFileSize(att.file.size)}</div>
+          </div>
+          <button class="remove-btn" data-idx="${idx}">×</button>
+        `;
+        attachmentPreview.appendChild(item);
+      });
+
+      attachmentPreview.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          pendingAttachments.splice(parseInt(e.target.dataset.idx), 1);
+          updateAttachmentPreview();
+        });
+      });
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleFiles(files) {
+      const validTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+      for (const file of files) {
+        if (!validTypes.includes(file.type) || file.size > 20 * 1024 * 1024) continue;
+        const base64 = await readFileAsBase64(file);
+        const preview = `data:${file.type};base64,${base64}`;
+        pendingAttachments.push({ file, base64, preview, mediaType: file.type });
+      }
+      updateAttachmentPreview();
+    }
+
+    attachBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFiles(Array.from(e.target.files));
+        fileInput.value = '';
+      }
+    });
+
+    inputWrapper.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      inputWrapper.classList.add('drag-over');
+    });
+    inputWrapper.addEventListener('dragleave', () => inputWrapper.classList.remove('drag-over'));
+    inputWrapper.addEventListener('drop', (e) => {
+      e.preventDefault();
+      inputWrapper.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) handleFiles(Array.from(e.dataTransfer.files));
+    });
+
+    // Send message
+    async function sendMessage() {
+      const message = chatInput.value.trim();
+      const hasAttachments = pendingAttachments.length > 0;
+      if (!message && !hasAttachments) return;
+      
+      // Check paywall before allowing message send
+      if (!checkPaywallBeforeSend()) {
+        chatInput.value = message; // Restore message
+        return;
+      }
+
+      chatInput.value = '';
+      const imagePreviews = pendingAttachments.map(att => att.preview);
+      addMessage('user', message || '[Image attachment]', imagePreviews);
+
+      // Build API content
+      let messageContent = [];
+      for (const att of pendingAttachments) {
+        messageContent.push({
+          type: 'image',
+          source: { type: 'base64', media_type: att.mediaType, data: att.base64 }
+        });
+      }
+      if (message) {
+        messageContent.push({ type: 'text', text: message });
+      } else if (hasAttachments) {
+        messageContent.push({ type: 'text', text: '[User sent an image]' });
+      }
+
+      pendingAttachments = [];
+      updateAttachmentPreview();
+
+      // Save to session
+      const session = getCurrentSession();
+      const userMessage = {
+        role: 'user',
+        content: messageContent.length === 1 && messageContent[0].type === 'text'
+          ? messageContent[0].text
+          : messageContent
+      };
+      session.messages.push(userMessage);
+
+      // Update title if first message
+      if (session.messages.filter(m => m.role === 'user').length === 1) {
+        updateSessionTitle(session);
+        currentSessionTitle.textContent = session.title.toUpperCase();
+      }
+
+      saveSessions();
+      setStatus('executing');
+      addProcessingIndicator();
+
+      try {
+        // Call backend API (no API key needed - it's server-side)
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'chat',
+            messages: session.messages
+          })
+        });
+
+        const data = await response.json();
+        removeProcessingIndicator();
+
+        if (data.content && data.content[0] && data.content[0].text) {
+          const assistantMessage = data.content[0].text;
+          session.messages.push({ role: 'assistant', content: assistantMessage });
+          
+          // Track token usage from API response
+          const outputTokens = data.usage?.output_tokens || 0;
+          console.log('[SYRUS Tokens]', { charging: outputTokens });
+          addTokenUsage(outputTokens);
+          
+          // Check if orientation was just delivered
+          if (!session.orientationDelivered && hasOrientationBeenDelivered(session.messages)) {
+            session.orientationDelivered = true;
+          }
+          
+          saveSessions();
+          
+          // Show token status in toast
+          const percentUsed = (tokenData.tokensUsed / FREE_TOKEN_LIMIT) * 100;
+          if (tokenData.hasUnlimitedAccess) {
+            showToast(hasAttachments ? 'Image Processed' : 'Pattern Extracted');
+          } else if (percentUsed >= 80) {
+            showToast(`${formatNumber(FREE_TOKEN_LIMIT - tokenData.tokensUsed)} tokens remaining`);
+          } else {
+            showToast(hasAttachments ? 'Image Processed' : 'Pattern Extracted');
+          }
+          
+          addMessage('syrus', assistantMessage);
+          
+          // Check if we've hit the token limit and should show paywall
+          if (tokenData.isLocked) {
+            setTimeout(() => showPaywall(), 1000);
+          } else if (percentUsed >= 80 && !tokenData.hasUnlimitedAccess) {
+            setTimeout(() => showPaywall(), 2000);
+          }
+          
+          setStatus('logged');
+        } else if (data.error) {
+          const errMsg = 'System error: ' + data.error;
+          addMessage('syrus', errMsg);
+          session.messages.push({ role: 'assistant', content: errMsg });
+          saveSessions();
+          setStatus('logged');
+          showToast('Constraint Identified');
+        }
+      } catch (error) {
+        removeProcessingIndicator();
+        const errMsg = 'Connection interrupted. Retry.';
+        addMessage('syrus', errMsg);
+        session.messages.push({ role: 'assistant', content: errMsg });
+        saveSessions();
+        setStatus('logged');
+        showToast('Network Interrupted');
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // New session button
+    newSessionBtn.addEventListener('click', () => {
+      startNewSession();
+      closeSidebar();
+    });
+
+    // Reset all data button
+    const resetAllBtn = document.getElementById('reset-all-btn');
+    resetAllBtn.addEventListener('click', () => {
+      if (confirm('Clear all chat sessions? Token usage will remain.')) {
+        localStorage.removeItem(STORAGE_KEY);
+        // Keep tokens, API key, admin unlock, beta codes
+        sessions = [];
+        startNewSession();
+        renderSessionsList();
+        closeSidebar();
+        showToast('Sessions Cleared');
+      }
+    });
+
+    // Beta code handling
+    const betaCodeInput = document.getElementById('beta-code-input');
+    const betaCodeSubmit = document.getElementById('beta-code-submit');
+    const betaCodeStatus = document.getElementById('beta-code-status');
+    let betaCodeRedeemed = false;
+    
+    // Validate code via backend (server-side validation)
+    async function validateCodeWithServer(code) {
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'validate-code', code })
+        });
+        return await response.json();
+      } catch (error) {
+        return { valid: false, reason: 'Connection error' };
+      }
+    }
+    
+    async function redeemBetaCode() {
+      const code = betaCodeInput.value;
+      if (!code.trim()) return;
+      
+      // Show loading state
+      betaCodeStatus.textContent = 'Validating...';
+      betaCodeStatus.className = 'beta-code-status';
+      betaCodeSubmit.disabled = true;
+      
+      const result = await validateCodeWithServer(code);
+      
+      betaCodeSubmit.disabled = false;
+      
+      if (result.valid) {
+        // Reset tokens based on code type
+        if (result.type === 'operator') {
+          tokenData.hasUnlimitedAccess = true;
+        }
+        tokenData.tokensUsed = 0;
+        tokenData.isLocked = false;
+        tokenData.lockoutStartTime = null;
+        saveTokenData();
+        
+        // Mark as redeemed for this session
+        betaCodeRedeemed = true;
+        
+        // UI feedback
+        betaCodeInput.classList.remove('error');
+        betaCodeInput.classList.add('success');
+        betaCodeStatus.textContent = result.type === 'operator' 
+          ? 'Operator access granted — unlimited' 
+          : 'Access granted — 300 tokens loaded';
+        betaCodeStatus.className = 'beta-code-status success';
+        
+        // Enable initialize button visually
+        enterBtn.style.borderColor = 'var(--success)';
+        enterBtn.style.color = 'var(--success)';
+        
+        setTimeout(() => {
+          betaCodeInput.value = '';
+        }, 1000);
+      } else {
+        betaCodeInput.classList.remove('success');
+        betaCodeInput.classList.add('error');
+        betaCodeStatus.textContent = result.reason;
+        betaCodeStatus.className = 'beta-code-status error';
+        
+        setTimeout(() => {
+          betaCodeInput.classList.remove('error');
+        }, 300);
+      }
+    }
+    
+    betaCodeSubmit.addEventListener('click', redeemBetaCode);
+    betaCodeInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') redeemBetaCode();
+    });
+    betaCodeInput.addEventListener('input', () => {
+      betaCodeInput.classList.remove('error', 'success');
+      betaCodeStatus.textContent = '';
+      betaCodeStatus.className = 'beta-code-status';
+    });
+
+    // Entry
+    enterBtn.addEventListener('click', () => {
+      // Must redeem a code to enter (or have admin/unlimited access already stored)
+      const data = loadTokenData();
+      const hasUnlimited = data.hasUnlimitedAccess || data.adminUnlocked;
+      
+      if (!betaCodeRedeemed && !hasUnlimited) {
+        betaCodeStatus.textContent = 'Enter access code to initialize';
+        betaCodeStatus.className = 'beta-code-status error';
+        betaCodeInput.classList.add('error');
+        setTimeout(() => betaCodeInput.classList.remove('error'), 300);
+        betaCodeInput.focus();
+        return;
+      }
+      
+      flashAccess();
+      entryScreen.classList.add('hidden');
+      mainInterface.classList.add('visible');
+      chatInput.focus();
+      setStatus('monitoring');
+
+      loadSessions();
+      initTokenTracking();
+
+      if (sessions.length > 0) {
+        loadSession(sessions[0].id);
+      } else {
+        startNewSession();
+      }
+    });
+
+    // Init clocks
+    updateClocks();
+    setInterval(updateClocks, 1000);
+  </script>
+</body>
+</html>
